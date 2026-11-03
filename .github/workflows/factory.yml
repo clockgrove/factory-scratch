@@ -12,6 +12,11 @@ on:
     inputs:
       issue: { description: Objective issue number (empty runs the dispatcher), required: false }
       harness: { description: "Override FACTORY_HARNESS for this run (claude | codex | copilot)", required: false }
+  issues: # a new Objective (the factory:objective label) dispatches at once; the cron is only the sweep
+    types: [labeled]
+  workflow_run: # a review job finished, so a worker slot may be free
+    workflows: [factory]
+    types: [completed]
   pull_request: # fires because the App (not the job token) applies factory:review, or a human marks a Question draft ready
     types: [labeled, ready_for_review]
 env:
@@ -39,7 +44,11 @@ permissions: # the job token reads code and Actions; every write goes through th
   copilot-requests: write # Copilot gate on this scratch repository (bills the org or the owner's seat)
 jobs:
   dispatch:
-    if: github.event_name != 'pull_request'
+    if: >-
+      github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'issues' && github.event.label.name == 'factory:objective') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request')
+    concurrency: { group: factory-dispatch, cancel-in-progress: false }
     runs-on: ubuntu-latest
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
     steps:
