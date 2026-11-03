@@ -9,3 +9,7 @@ test("reverse reverses the greeting for a name", () => {
 test("reverse reverses the generic greeting for an empty name", () => {
   assert.equal(reverse(""), ".olleH");
 });
+
+test("reverse keeps astral code points intact", () => {
+  assert.equal(reverse("A😀"), ".😀A ,olleH");
+});
