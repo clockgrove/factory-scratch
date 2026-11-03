@@ -1,0 +1,21 @@
+# The repository's own CI: runs on every PR and on the merge queue's commit, so a
+# required check named `quality` gates merges to main.
+name: Quality
+on:
+  pull_request:
+  merge_group:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  quality:
+    name: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+      - run: npm run check
+      - run: npm test

@@ -1,0 +1,12 @@
+{
+  "name": "factory-scratch",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Scratch adopter for Factory 0.6 gates: a tiny library with tests and a CI check.",
+  "scripts": {
+    "check": "node --check src/*.mjs && node --check test/*.mjs",
+    "test": "node --test 'test/*.test.mjs'"
+  },
+  "engines": { "node": ">=22" }
+}
