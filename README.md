@@ -17,5 +17,6 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `lower(name)` (`src/lower.mjs`): returns `greet(name)` in lower case with the trailing period replaced by an exclamation mark, e.g. `hello, ada!` for `Ada`, or `hello!` when the name is empty or missing.
 - `upper(name)` (`src/upper.mjs`): returns `greet(name)` in upper case with a trailing `!` instead of the period, e.g. `HELLO, ADA!`, or `HELLO!` when the name is empty or missing.
 - `compact(name)` (`src/compact.mjs`): returns `greet(name)` with every space removed, for a URL slug, e.g. `Hello,Ada.` for `Ada`, or `Hello.` when the name is empty or missing.
+- `twice110312190(name)` (`src/twice110312190.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
