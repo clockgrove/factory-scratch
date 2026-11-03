@@ -15,3 +15,4 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `length(name)` (`src/length.mjs`): returns the number of characters in `greet(name)`, counted as JavaScript string length (UTF-16 code units), e.g. `11` for `Ada` (`Hello, Ada.`), or `6` when the name is empty or missing.
 - `letters(name)` (`src/letters.mjs`): returns `greet(name)` split into an array of single characters (Unicode code points), e.g. `["H","e","l","l","o",","," ","A","d","a","."]` for `Ada`, or `["H","e","l","l","o","."]` when the name is empty or missing.
 - `lower(name)` (`src/lower.mjs`): returns `greet(name)` in lower case with the trailing period replaced by an exclamation mark, e.g. `hello, ada!` for `Ada`, or `hello!` when the name is empty or missing.
+- `upper(name)` (`src/upper.mjs`): returns `greet(name)` in upper case with a trailing `!` instead of the period, e.g. `HELLO, ADA!`, or `HELLO!` when the name is empty or missing.
