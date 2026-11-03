@@ -9,3 +9,4 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `shout(name)` (`src/shout.mjs`): returns `greet(name)` in upper case, e.g. `HELLO, ADA.`, or `HELLO.` when the name is empty or missing.
 - `whisper(name)` (`src/whisper.mjs`): returns `greet(name)` in lower case, e.g. `hello, ada.`, or `hello.` when the name is empty or missing.
 - `greetings(name)` (`src/greetings.mjs`): returns `[greet(name), shout(name), whisper(name)]`, e.g. `["Hello, Ada.", "HELLO, ADA.", "hello, ada."]`, or `["Hello.", "HELLO.", "hello."]` when the name is empty or missing.
+- `wordCount(name)` (`src/word-count.mjs`): returns the number of whitespace-separated words in `greet(name)`, with punctuation staying attached, e.g. `2` for `Ada` (`Hello, Ada.`), or `1` when the name is empty or missing.
