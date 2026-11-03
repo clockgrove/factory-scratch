@@ -8,3 +8,4 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `farewell(name)` (`src/farewell.mjs`): returns `Goodbye, <name>.` with the name trimmed, or `Goodbye.` when the name is empty or missing.
 - `shout(name)` (`src/shout.mjs`): returns `greet(name)` in upper case, e.g. `HELLO, ADA.`, or `HELLO.` when the name is empty or missing.
 - `whisper(name)` (`src/whisper.mjs`): returns `greet(name)` in lower case, e.g. `hello, ada.`, or `hello.` when the name is empty or missing.
+- `greetings(name)` (`src/greetings.mjs`): returns `[greet(name), shout(name), whisper(name)]`, e.g. `["Hello, Ada.", "HELLO, ADA.", "hello, ada."]`, or `["Hello.", "HELLO.", "hello."]` when the name is empty or missing.
