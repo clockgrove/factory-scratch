@@ -14,9 +14,6 @@ on:
       harness: { description: "Override FACTORY_HARNESS for this run (claude | codex | copilot)", required: false }
   issues: # a new Objective (the factory:objective label) dispatches at once; the cron is only the sweep
     types: [labeled]
-  workflow_run: # a review job finished, so a worker slot may be free
-    workflows: [factory]
-    types: [completed]
   pull_request: # fires because the App (not the job token) applies factory:review, or a human marks a Question draft ready
     types: [labeled, ready_for_review]
 env:
@@ -46,8 +43,7 @@ jobs:
   dispatch:
     if: >-
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && github.event.label.name == 'factory:objective') ||
-      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request')
+      (github.event_name == 'issues' && github.event.label.name == 'factory:objective')
     concurrency: { group: factory-dispatch, cancel-in-progress: false }
     runs-on: ubuntu-latest
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
@@ -87,6 +83,7 @@ jobs:
       ((github.event.action == 'labeled' && github.event.label.name == 'factory:review') || github.event.action == 'ready_for_review')
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions: { contents: read, issues: write, actions: write, copilot-requests: write } # actions: write only here, for the tick below
     concurrency: { group: "factory-review-${{ github.event.pull_request.number }}", cancel-in-progress: false }
     steps:
       - uses: actions/checkout@v7
@@ -106,3 +103,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         if: always() && steps.f.outputs.issue_number != ''
         with: { name: "factory-usage-${{ steps.f.outputs.issue_number }}-review", path: "${{ steps.f.outputs.usage_dir }}", retention-days: 90, overwrite: true } # one name per review run; the bench lists it exactly
+      - name: Dispatch tick (a worker slot freed)
+        if: always()
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh workflow run factory.yml || true
