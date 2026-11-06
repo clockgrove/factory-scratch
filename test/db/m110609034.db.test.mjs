@@ -50,3 +50,9 @@ test("the command passes --k to the store", async () => {
   const out = await run(db.client, ["--tag", "t6", "--embedding", "0,0,0", "--k", "1"]);
   assert.equal(out, `#${one.id} one (1.000)`);
 });
+
+test("the command returns an empty string when no note carries the tag", async () => {
+  await add(db.client, { title: "other", tags: ["t7"], embedding: [1, 0, 0] });
+  const out = await run(db.client, ["--tag", "unused", "--embedding", "1,0,0"]);
+  assert.equal(out, "");
+});
