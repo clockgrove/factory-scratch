@@ -27,4 +27,16 @@ test("an unknown id gives the no-note line", async () => {
 test("a missing or non-integer id is BAD_ID", async () => {
   await assert.rejects(run(db.client, []), { code: "BAD_ID" });
   await assert.rejects(run(db.client, ["abc"]), { code: "BAD_ID" });
+  await assert.rejects(run(db.client, ["1.5"]), { code: "BAD_ID" });
+  await assert.rejects(run(db.client, [""]), { code: "BAD_ID" });
+});
+
+test("an integer id outside the int4 range gives the no-note line", async () => {
+  assert.equal(await run(db.client, ["3000000000"]), "no note #3000000000");
+  assert.equal(await run(db.client, ["9007199254740993"]), "no note #9007199254740993");
+});
+
+test("an id written as 1.0 is read the way notes remove reads it", async () => {
+  const note = await add(db.client, { title: "spelled" });
+  assert.equal(await run(db.client, [`${note.id}.0`]), `#${note.id} m110608362_count=1`);
 });
