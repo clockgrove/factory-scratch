@@ -20,3 +20,7 @@ test("the default lists the newest titles first", async () => {
 test("--limit 2 keeps the two newest titles", async () => {
   assert.equal(await run(db.client, ["--limit", "2"]), "three | two");
 });
+
+test("a --limit beyond bigint still lists every title", async () => {
+  assert.equal(await run(db.client, ["--limit", "99999999999999999999"]), "three | two | one");
+});
