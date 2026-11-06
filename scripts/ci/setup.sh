@@ -13,8 +13,8 @@ fi
 sudo systemctl start postgresql || sudo service postgresql start
 tmp="$(mktemp -d)"
 git clone -q --depth 1 --branch "$PGVECTOR_VERSION" https://github.com/pgvector/pgvector.git "$tmp/pgvector"
-make -s -C "$tmp/pgvector" >/dev/null
-sudo make -s -C "$tmp/pgvector" install >/dev/null
+make -s -C "$tmp/pgvector" with_llvm=no >/dev/null
+sudo make -s -C "$tmp/pgvector" install with_llvm=no >/dev/null
 sudo -u postgres psql -v ON_ERROR_STOP=1 -q <<'SQL'
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'factory') THEN CREATE ROLE factory LOGIN PASSWORD 'factory' SUPERUSER; END IF; END $$;
 SQL
