@@ -3,7 +3,7 @@
 A throwaway repository the Factory 0.6 gates run against: a tiny greeting library (`src/greet.mjs` and friends) and a Postgres-backed notes CLI (`src/cli.mjs`). Plain Node 22 ES modules; the only dependency is `pg`.
 
 - Validation: `npm run check`, `npm test`, then `npm run test:db`. All three must pass before a PR is opened. `test:db` needs `DATABASE_URL`, which `scripts/ci/setup.sh` exports (PostgreSQL with pgvector, role and database `factory`).
-- Tests live in `test/*.test.mjs` (no database) and `test/db/*.db.test.mjs` (a fresh schema per file through `test/db/helpers.mjs`), use `node:test`, one test per behaviour, exact values.
+- Tests live in `test/*.test.mjs` (no database) and `test/db/*.db.test.mjs` (a fresh schema per file through `test/db/helpers.mjs`; files run in parallel, and pgvector lives in `public`), use `node:test`, one test per behaviour, exact values. Assert that a discovered list contains what a test needs, never the exact list, so features added in parallel never edit each other's tests.
 - Source lives in `src/`. Keep functions small and documented with one sentence.
 
 ## Extension points of the notes CLI

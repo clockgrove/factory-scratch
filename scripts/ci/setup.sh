@@ -19,6 +19,9 @@ sudo -u postgres psql -v ON_ERROR_STOP=1 -q <<'SQL'
 DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'factory') THEN CREATE ROLE factory LOGIN PASSWORD 'factory' SUPERUSER; END IF; END $$;
 SQL
 sudo -u postgres psql -q -tc "SELECT 1 FROM pg_database WHERE datname = 'factory'" | grep -q 1 || sudo -u postgres createdb -O factory factory
+# The extension lives in public, created once, so test files that each migrate their own schema in
+# parallel never race to create it and never drop it with their schema.
+sudo -u postgres psql -v ON_ERROR_STOP=1 -q -d factory -c "CREATE EXTENSION IF NOT EXISTS vector SCHEMA public"
 export DATABASE_URL="postgres://factory:factory@localhost:5432/factory"
 if [ -n "${GITHUB_ENV:-}" ]; then echo "DATABASE_URL=$DATABASE_URL" >> "$GITHUB_ENV"; fi
 echo "setup: postgres ready at $DATABASE_URL with pgvector $PGVECTOR_VERSION"
