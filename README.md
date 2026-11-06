@@ -22,3 +22,7 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `bracket110312191(name)` (`src/bracket110312191.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
+
+## Notes CLI
+
+`npm run notes -- <command> [args]` against `DATABASE_URL`: `add --title T [--body B] [--tag X]... [--embedding 1,2,3]`, `list [--tag X] [--limit N] [--format table|json]`, `remove <id>`, `similar --embedding 1,2,3 [--k N]`. Commands, export formats and rules are discovered from `src/commands/`, `src/export/` and `src/rules/`; schema changes are files under `migrations/`. `scripts/ci/setup.sh` prepares PostgreSQL with pgvector and exports `DATABASE_URL`. See AGENTS.md for how a feature is added.
