@@ -1,34 +1,22 @@
 // notes bump-m110610172 <id>
-import { parseArgs } from "node:util";
-
-const INT4_MIN = -2147483648;
-const INT4_MAX = 2147483647;
+const INT4_MIN = -2147483648n;
+const INT4_MAX = 2147483647n;
 
 /** Throws the BAD_ID error this command reports for a missing or non-integer id. */
 function badId() {
   throw Object.assign(new Error("bump-m110610172 needs an integer id"), { code: "BAD_ID" });
 }
 
-/** Returns the raw id argument: a lone negative number is the id, any other parse error is BAD_ID. */
-function rawId(args) {
-  if (args.length === 1 && /^-\d/.test(args[0])) return args[0];
-  try {
-    return parseArgs({ args, allowPositionals: true }).positionals[0];
-  } catch {
-    return badId();
-  }
-}
-
-/** Increments the m110610172 counter of a note and reports the new value. */
+/** Increments the m110610172 counter of the note whose id is args[0] and reports the new value. */
 export async function run(client, args) {
-  const raw = rawId(args);
-  if (typeof raw !== "string" || raw.trim() === "") badId();
-  const id = Number(raw);
-  if (!Number.isInteger(id)) badId();
+  // The command takes no options, so the id is args[0] as typed: decimal digits with an optional minus.
+  const raw = args[0];
+  if (typeof raw !== "string" || !/^-?\d+$/.test(raw)) badId();
+  const id = BigInt(raw);
   if (id < INT4_MIN || id > INT4_MAX) return `no note #${id}`;
   const { rows } = await client.query(
     "UPDATE notes SET m110610172_count = m110610172_count + 1 WHERE id = $1 RETURNING m110610172_count",
-    [id],
+    [Number(id)],
   );
   const row = rows[0];
   if (!row) return `no note #${id}`;

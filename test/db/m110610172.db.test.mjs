@@ -35,21 +35,23 @@ test("an integer id outside the int4 range gives the no-note line", async () => 
   assert.equal(await run(db.client, ["3000000000"]), "no note #3000000000");
 });
 
-test("an id spelled as remove reads it bumps that note", async () => {
-  const note = await add(db.client, { title: "spelled" });
-  assert.equal(await run(db.client, [`${note.id}.0`]), `#${note.id} m110610172_count=1`);
-  assert.equal(await run(db.client, [`+${note.id}`]), `#${note.id} m110610172_count=2`);
-});
-
 test("a lone negative id gives the no-note line", async () => {
   assert.equal(await run(db.client, ["-5"]), "no note #-5");
+  assert.equal(await run(db.client, ["-5", "x"]), "no note #-5");
 });
 
-test("an unknown option and no id is BAD_ID", async () => {
-  await assert.rejects(run(db.client, ["--foo"]), { code: "BAD_ID" });
+test("an id followed by an option bumps that note", async () => {
+  const note = await add(db.client, { title: "optioned" });
+  assert.equal(await run(db.client, [String(note.id), "--foo"]), `#${note.id} m110610172_count=1`);
+  assert.equal(await run(db.client, [String(note.id), "-x"]), `#${note.id} m110610172_count=2`);
 });
 
-test("an id after -- is read as the positional id", async () => {
-  const note = await add(db.client, { title: "dashed" });
-  assert.equal(await run(db.client, ["--", String(note.id)]), `#${note.id} m110610172_count=1`);
+test("an id that is not plain decimal digits is BAD_ID", async () => {
+  for (const raw of ["1.0", "+1", "0x10", "1e3", "0b101", " 5 ", "--", "--foo"]) {
+    await assert.rejects(run(db.client, [raw]), { code: "BAD_ID" }, raw);
+  }
+});
+
+test("a huge id is echoed exactly in the no-note line", async () => {
+  assert.equal(await run(db.client, ["99999999999999999999"]), "no note #99999999999999999999");
 });
