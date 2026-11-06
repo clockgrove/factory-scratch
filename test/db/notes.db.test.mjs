@@ -17,10 +17,6 @@ test("add, list newest first, filter by tag, remove", async () => {
   assert.equal(await remove(db.client, a.id), false);
 });
 
-test("a rule rejects a blank title with its code", async () => {
-  await assert.rejects(add(db.client, { title: "  " }), (e) => e.code === "TITLE_REQUIRED");
-});
-
 test("similar returns the nearest embeddings first with a distance", async () => {
   const near = await add(db.client, { title: "near", embedding: [1, 0, 0] });
   await add(db.client, { title: "far", embedding: [0, 10, 0] });

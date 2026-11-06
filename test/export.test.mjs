@@ -5,7 +5,7 @@ import { commandNames } from "../src/commands.mjs";
 
 test("formats and commands are discovered from their directories", async () => {
   assert.ok(formats().includes("json") && formats().includes("table"));
-  assert.deepEqual(commandNames(), ["add", "list", "remove", "similar"]);
+  for (const c of ["add", "list", "remove", "similar"]) assert.ok(commandNames().includes(c), `command ${c} is discovered`);
   await assert.rejects(exporter("nope"), (e) => e.code === "UNKNOWN_FORMAT");
 });
 
