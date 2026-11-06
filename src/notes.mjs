@@ -32,3 +32,10 @@ export async function similar(client, embedding, k = 3) {
   const r = await client.query("SELECT *, embedding <-> $1 AS distance FROM notes WHERE embedding IS NOT NULL ORDER BY embedding <-> $1 LIMIT $2", [vec, k]);
   return r.rows;
 }
+
+/** The `k` notes carrying `tag` with an embedding, nearest to `embedding` first (ties by id), with their distance. */
+export async function similarByTag(client, tag, embedding, k = 3) {
+  const vec = `[${embedding.map(Number).join(",")}]`;
+  const r = await client.query("SELECT *, embedding <-> $2 AS distance FROM notes WHERE $1 = ANY(tags) AND embedding IS NOT NULL ORDER BY embedding <-> $2, id LIMIT $3", [tag, vec, k]);
+  return r.rows;
+}
