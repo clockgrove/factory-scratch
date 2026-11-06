@@ -36,7 +36,13 @@ test("an integer id outside the int4 range gives the no-note line", async () => 
   assert.equal(await run(db.client, ["9007199254740993"]), "no note #9007199254740993");
 });
 
-test("an id written as 1.0 is read the way notes remove reads it", async () => {
-  const note = await add(db.client, { title: "spelled" });
-  assert.equal(await run(db.client, [`${note.id}.0`]), `#${note.id} m110609032_count=1`);
+test("an id in a non-decimal or non-integer spelling is BAD_ID", async () => {
+  for (const raw of ["0x10", "1e1", "0b11", "+3", "3.0", " 3"]) {
+    await assert.rejects(run(db.client, [raw]), { code: "BAD_ID" }, raw);
+  }
+});
+
+test("an id after -- is read as the positional id", async () => {
+  const note = await add(db.client, { title: "dashed" });
+  assert.equal(await run(db.client, ["--", String(note.id)]), `#${note.id} m110609032_count=1`);
 });
