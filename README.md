@@ -21,6 +21,7 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `byteLength(name)` (`src/byte-length.mjs`): returns the number of UTF-8 bytes in `greet(name)`, for a transport budget, e.g. `11` for `Ada` (`Hello, Ada.`), or `6` when the name is empty or missing.
 - `bracket110312191(name)` (`src/bracket110312191.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
 - `bracket110609581(name)` (`src/bracket110609581.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
+- `twice110609580(name)` (`src/twice110609580.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
 
