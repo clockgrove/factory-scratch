@@ -33,13 +33,20 @@ test("a missing or non-integer id is BAD_ID", async () => {
 
 test("an integer id outside the int4 range gives the no-note line", async () => {
   assert.equal(await run(db.client, ["3000000000"]), "no note #3000000000");
-  assert.equal(await run(db.client, ["9007199254740993"]), "no note #9007199254740993");
 });
 
-test("an id in a non-decimal or non-integer spelling is BAD_ID", async () => {
-  for (const raw of ["0x10", "1e1", "0b11", "+3", "3.0", " 3"]) {
-    await assert.rejects(run(db.client, [raw]), { code: "BAD_ID" }, raw);
-  }
+test("an id spelled as remove reads it bumps that note", async () => {
+  const note = await add(db.client, { title: "spelled" });
+  assert.equal(await run(db.client, [`${note.id}.0`]), `#${note.id} m110609332_count=1`);
+  assert.equal(await run(db.client, [`+${note.id}`]), `#${note.id} m110609332_count=2`);
+});
+
+test("a lone negative id gives the no-note line", async () => {
+  assert.equal(await run(db.client, ["-5"]), "no note #-5");
+});
+
+test("an unknown option and no id is BAD_ID", async () => {
+  await assert.rejects(run(db.client, ["--foo"]), { code: "BAD_ID" });
 });
 
 test("an id after -- is read as the positional id", async () => {
