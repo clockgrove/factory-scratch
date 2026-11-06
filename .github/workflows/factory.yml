@@ -28,8 +28,8 @@ env:
   FACTORY_TIMEOUT_MINUTES: 90 # under 360 on hosted runners; mirrored in timeout-minutes below
   FACTORY_AUTO_MERGE: "true"
   FACTORY_NOTIFY: kirkmarple-clockgrove
-  FACTORY_SETUP: ""
-  FACTORY_VALIDATION: npm run check, npm test
+  FACTORY_SETUP: scripts/ci/setup.sh
+  FACTORY_VALIDATION: npm run check, npm test, npm run test:db
   FACTORY_BUDGET_COMMAND: ""
   FACTORY_PROTECTED_PATHS: ""
   FACTORY_CI_CHECKS: quality
