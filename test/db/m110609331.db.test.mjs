@@ -20,3 +20,8 @@ test("titles are joined newest first", async () => {
 test("--limit caps the number of titles", async () => {
   assert.equal(await run(db.client, ["--limit", "2"]), "three | two");
 });
+
+test("the default limit is five titles, newest first", async () => {
+  for (const title of ["four", "five", "six"]) await add(db.client, { title });
+  assert.equal(await run(db.client, []), "six | five | four | three | two");
+});
