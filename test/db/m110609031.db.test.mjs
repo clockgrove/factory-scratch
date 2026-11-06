@@ -22,3 +22,10 @@ test("the default limit lists the titles newest first", async () => {
 test("--limit 2 keeps only the two newest titles", async () => {
   assert.equal(await run(db.client, ["--limit", "2"]), "third | second");
 });
+
+test("the default limit is five titles", async () => {
+  await add(db.client, { title: "fourth" });
+  await add(db.client, { title: "fifth" });
+  await add(db.client, { title: "sixth" });
+  assert.equal(await run(db.client, []), "sixth | fifth | fourth | third | second");
+});
