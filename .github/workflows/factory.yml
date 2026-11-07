@@ -17,11 +17,10 @@ on:
   pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready, or a Factory PR merged (siblings may be stale now)
     types: [labeled, ready_for_review, closed]
 env:
-  FACTORY_HARNESS: copilot # claude | codex | copilot (Copilot drill on Actions; back to claude after)
-  FACTORY_RESUME_POLICY: fix-passes # resume drill; back to fresh after
-  FACTORY_MODEL: "" # Copilot drill: the harness default; back to claude-opus-5-5 after
-  FACTORY_SUBAGENT_MODEL: "" # Copilot drill: the harness default; back to claude-sonnet-5-5 after
-  FACTORY_REVIEWER_MODEL: "" # Copilot drill: the harness default; back to claude-fable-5-1 after
+  FACTORY_HARNESS: claude # claude | codex | copilot
+  FACTORY_MODEL: claude-opus-5-5
+  FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
+  FACTORY_REVIEWER_MODEL: claude-fable-5-1
   FACTORY_CREDENTIAL: plan # this is the owner's own scratch repository; unattended runs elsewhere use api
   FACTORY_MAX_CONCURRENT: 2
   FACTORY_DAILY_USD: 50
@@ -50,7 +49,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
     steps:
-      - uses: clockgrove/factory@v0.7.19
+      - uses: clockgrove/factory@v0.7.20
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   work:
@@ -64,7 +63,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false }
-      - uses: clockgrove/factory@v0.7.19
+      - uses: clockgrove/factory@v0.7.20
         id: f
         with:
           mode: work
@@ -96,7 +95,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false }
-      - uses: clockgrove/factory@v0.7.19
+      - uses: clockgrove/factory@v0.7.20
         id: f
         with:
           mode: review
