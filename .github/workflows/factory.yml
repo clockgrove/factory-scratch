@@ -17,10 +17,11 @@ on:
   pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready, or a Factory PR merged (siblings may be stale now)
     types: [labeled, ready_for_review, closed]
 env:
-  FACTORY_HARNESS: claude # claude | codex | copilot
-  FACTORY_MODEL: claude-opus-5-5
-  FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
-  FACTORY_REVIEWER_MODEL: claude-fable-5-1
+  FACTORY_HARNESS: copilot # claude | codex | copilot (Copilot drill on Actions; back to claude after)
+  FACTORY_RESUME_POLICY: fix-passes # resume drill; back to fresh after
+  FACTORY_MODEL: "" # Copilot drill: the harness default; back to claude-opus-5-5 after
+  FACTORY_SUBAGENT_MODEL: "" # Copilot drill: the harness default; back to claude-sonnet-5-5 after
+  FACTORY_REVIEWER_MODEL: "" # Copilot drill: the harness default; back to claude-fable-5-1 after
   FACTORY_CREDENTIAL: plan # this is the owner's own scratch repository; unattended runs elsewhere use api
   FACTORY_MAX_CONCURRENT: 2
   FACTORY_DAILY_USD: 50
@@ -49,7 +50,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
     steps:
-      - uses: clockgrove/factory@v0.7.12
+      - uses: clockgrove/factory@v0.7.19
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   work:
@@ -63,7 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false }
-      - uses: clockgrove/factory@v0.7.12
+      - uses: clockgrove/factory@v0.7.19
         id: f
         with:
           mode: work
@@ -73,6 +74,7 @@ jobs:
           app_private_key: ${{ secrets.FACTORY_APP_PRIVATE_KEY }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }} # Claude; empty with federation
           codex_api_key: ${{ secrets.CODEX_API_KEY }} # Codex; reaches the harness step only
+          copilot_github_token: ${{ secrets.COPILOT_GITHUB_TOKEN }} # Copilot; a Copilot Requests token, else the job token bills
           # anthropic_oidc_exchange_url: ${{ vars.ANTHROPIC_OIDC_EXCHANGE_URL }} # Claude federation (with id-token: write above)
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # credential: plan; your own repository only
       - uses: actions/upload-artifact@v7
@@ -94,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false }
-      - uses: clockgrove/factory@v0.7.12
+      - uses: clockgrove/factory@v0.7.19
         id: f
         with:
           mode: review
@@ -104,6 +106,7 @@ jobs:
           app_private_key: ${{ secrets.FACTORY_APP_PRIVATE_KEY }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           codex_api_key: ${{ secrets.CODEX_API_KEY }}
+          copilot_github_token: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           # anthropic_oidc_exchange_url: ${{ vars.ANTHROPIC_OIDC_EXCHANGE_URL }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # credential: plan; your own repository only
       - uses: actions/upload-artifact@v7
