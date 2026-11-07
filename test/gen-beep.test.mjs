@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { beepWav } from '../scripts/gen-beep.mjs';
 
 const wav = beepWav();
@@ -40,4 +41,11 @@ test('sample 1 follows the 440 Hz sine', () => {
 
 test('two calls return equal buffers', () => {
   assert.deepEqual(beepWav(), beepWav());
+});
+
+test('sha256 matches the committed media/beep.wav LFS oid', () => {
+  assert.equal(
+    createHash('sha256').update(beepWav()).digest('hex'),
+    'faa6433613ef3732c87555cee537cb519b614797ab4d70d5d389b2dd03fdc2b1',
+  );
 });
