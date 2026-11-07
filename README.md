@@ -38,3 +38,10 @@ Scratch note: used to make a Factory PR fall behind main for the no-queue fallba
 ## Notes CLI
 
 `npm run notes -- <command> [args]` against `DATABASE_URL`: `add --title T [--body B] [--tag X]... [--embedding 1,2,3]`, `list [--tag X] [--limit N] [--format table|json]`, `remove <id>`, `similar --embedding 1,2,3 [--k N]`. Commands, export formats and rules are discovered from `src/commands/`, `src/export/` and `src/rules/`; schema changes are files under `migrations/`. `scripts/ci/setup.sh` prepares PostgreSQL with pgvector and exports `DATABASE_URL`. See AGENTS.md for how a feature is added.
+
+## Media
+
+Files under `media/` are stored in Git LFS; sizes and sha256 are of the real content (`git lfs pull`).
+
+- `media/triangle.glb` — 468 bytes, sha256 `69432afb5f0c88e73f52b199a6f91fac09487ba914d737406ca3e8c0cd38bfaa`
+- `media/beep.wav` — 4044 bytes, sha256 `faa6433613ef3732c87555cee537cb519b614797ab4d70d5d389b2dd03fdc2b1`
