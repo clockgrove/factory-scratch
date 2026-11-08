@@ -11,7 +11,7 @@ on:
 permissions: { contents: read }
 jobs:
   check:
-    strategy: { fail-fast: false, matrix: { os: [ubuntu-latest, macos-latest, windows-latest] } }
+    strategy: { fail-fast: false, matrix: { os: [ubuntu-latest, ubuntu-24.04, macos-latest, windows-latest] } }
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
@@ -25,12 +25,15 @@ jobs:
           sudo apt-get update -qq && sudo apt-get install -y -qq bubblewrap socat ripgrep slirp4netns iptables
           # Ubuntu 24.04 restricts unprivileged user namespaces, which every one of these sandboxes needs.
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          # Ubuntu 26.04 also loads AppArmor's bwrap-userns-restrict profile, which takes every capability from what
+          # bubblewrap starts; srt's sandbox, and Claude Code's, needs some there (clockgrove/factory docs/LOCAL.md).
+          if sudo grep -q '^unpriv_bwrap ' /sys/kernel/security/apparmor/profiles; then sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict; fi
       - name: Sandbox tools (macOS)
         if: runner.os == 'macOS'
         run: brew install ripgrep
       - name: Harness CLIs
         if: runner.os != 'Windows'
-        run: npm install -g @anthropic-ai/sandbox-runtime @anthropic-ai/claude-code @openai/codex @github/copilot
+        run: npm install -g --allow-scripts=@anthropic-ai/claude-code @anthropic-ai/sandbox-runtime @anthropic-ai/claude-code @openai/codex @github/copilot
       - name: Check
         shell: bash
         env:
