@@ -1,0 +1,48 @@
+name: Sandbox conformance
+# On demand: one of Factory's cloud-sandbox adapters against its real vendor (clockgrove/factory
+# bench/sandbox-conformance.mjs). Creates one 1-vCPU sandbox, checks every contract operation and the uid split,
+# and destroys it, on failure too. Spends a few cents of the vendor's list rates per run. Not part of any PR's checks.
+on:
+  workflow_dispatch:
+    inputs:
+      ref: { description: "clockgrove/factory ref to check", required: false, default: main }
+      vendor: { description: "Sandbox adapter", required: false, default: vercel }
+permissions: { contents: read }
+concurrency: { group: sandbox-conformance, cancel-in-progress: false }
+jobs:
+  conformance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with: { repository: clockgrove/factory, ref: "${{ inputs.ref }}", path: factory, persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with: { node-version: 24 }
+      - name: The Vercel credentials belong to the clockgrove team
+        if: inputs.vendor == 'vercel'
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        # Prints the team's slug and name only: never the token or an id. The project is checked, not named.
+        run: |
+          for v in VERCEL_TOKEN VERCEL_TEAM_ID VERCEL_PROJECT_ID; do [ -n "${!v}" ] || { echo "::error::$v is not set for this repository"; exit 1; }; done
+          auth="Authorization: Bearer $VERCEL_TOKEN"
+          team="$(curl -fsS -H "$auth" "https://api.vercel.com/v2/teams/$VERCEL_TEAM_ID")" || { echo "::error::the token cannot read the team VERCEL_TEAM_ID names"; exit 1; }
+          slug="$(jq -r '.slug // ""' <<<"$team")"; name="$(jq -r '.name // ""' <<<"$team")"
+          echo "Vercel team: slug=$slug name=$name"
+          [ "$slug" = clockgrove ] || [ "${name,,}" = clockgrove ] || { echo "::error::VERCEL_TEAM_ID is not the clockgrove team"; exit 1; }
+          curl -fsS -o /dev/null -H "$auth" "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID?teamId=$VERCEL_TEAM_ID" || { echo "::error::VERCEL_PROJECT_ID is not a project of that team the token can read"; exit 1; }
+          echo "Vercel project: found in that team"
+      - name: Adapter dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund --prefix factory/plugin
+      - name: Conformance
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VENDOR: ${{ inputs.vendor }}
+        run: node factory/bench/sandbox-conformance.mjs --vendor "$VENDOR" --json sandbox-conformance.json
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with: { name: sandbox-conformance, path: sandbox-conformance.json, if-no-files-found: ignore }
