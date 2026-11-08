@@ -13,7 +13,7 @@ permissions:
 jobs:
   quality:
     name: quality
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04 # ubuntu-latest moved to 26.04, where setup.sh's PostgreSQL packages conflict
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
