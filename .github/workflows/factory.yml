@@ -23,8 +23,8 @@ on:
   push: # a merge to the default branch refreshes the sandbox image (the image job)
     branches:
       - "main"
-  repository_dispatch: # factory-tick: the webhook Worker's dispatcher tick after it requeues an answered Question (the App's contents write; no Actions permission); factory-stage: a stage in its sandbox asks for fresh tokens, or says it ended (only Factory's App sends these)
-    types: [factory-tick, factory-stage]
+  repository_dispatch: # factory-stage: a stage in its sandbox asks for fresh tokens, or says it ended (only Factory's App sends these)
+    types: [factory-stage]
   issue_comment: # a maintainer's comment on an Objective: the answer to its Question
     types: [created]
   check_suite: # CI from a GitHub App outside Actions finished on a factory/ branch: a stage waiting on it resumes, or the dispatcher's merge pass runs
@@ -37,7 +37,7 @@ env:
   FACTORY_HARNESS: claude # claude | codex | copilot
   FACTORY_MODEL: claude-opus-5-5
   FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
-  FACTORY_REVIEWER_MODEL: claude-fable-5-1
+  FACTORY_REVIEWER_MODEL: claude-fable-5-2
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
   FACTORY_MAX_CONCURRENT: 2
   FACTORY_DAILY_USD: 50
@@ -49,7 +49,7 @@ env:
   FACTORY_INSTALL: auto # auto (from the lockfile), none, or your own command
   FACTORY_VALIDATION: npm run check, npm test, npm run test:db
   FACTORY_BUDGET_COMMAND: ""
-  FACTORY_PROTECTED_PATHS: scripts/ci/setup.sh
+  FACTORY_PROTECTED_PATHS: /scripts/ci/setup.sh
   FACTORY_CI_CHECKS: quality
   FACTORY_NODE_VERSION: 22 # the Node.js your CI uses
   FACTORY_SANDBOX: vercel # each stage runs in the Objective's cloud sandbox, started by a launch job; re-run setup to change
@@ -71,15 +71,15 @@ jobs:
     # a sandbox the gate job takes those events and ticks this job itself).
     if: >-
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'repository_dispatch' && github.event.action == 'factory-tick') ||
       (github.event_name == 'issues' && (github.event.label.name == 'factory:objective' || (github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'factory:objective')))) ||
       (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/')) ||
       (github.event_name == 'pull_request' && github.event.action == 'dequeued' && startsWith(github.head_ref, 'factory/') && github.event.pull_request.head.repo.full_name == github.repository)
     concurrency: { group: factory-dispatch, cancel-in-progress: false } # ticks run one at a time
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # a tick takes seconds; a hung one would hold every later tick for the runner's six hours
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}", queue_watch: "${{ steps.f.outputs.queue_watch }}" }
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   queue-watch:
@@ -95,7 +95,7 @@ jobs:
     permissions: { contents: read, actions: write } # actions: write only for the dispatcher tick
     concurrency: { group: factory-queue-watch, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: w
         with: { mode: watch, pr: "${{ needs.dispatch.outputs.queue_watch }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
       - name: Dispatch tick (a queue commit started no check run)
@@ -113,7 +113,7 @@ jobs:
     permissions: { contents: read, actions: read } # the job token reads usage artifacts and this run; every write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: f
         with:
           mode: launch
@@ -137,25 +137,21 @@ jobs:
     # ready, its stage asking for tokens or saying it ended. The gate decides in no concurrency group, so an event that starts nothing (a stranger's comment, a fork's
     # CI) never queues in the Objective's group, where it would replace a pending launch. No SDK install here.
     name: launch gate (${{ github.event_name }})
-    # With the webhook Worker on (repository variable FACTORY_LAUNCH_WEBHOOK=on, docs/ADAPTERS.md) it takes these events
-    # and this job is skipped for them; a stage's own events (factory-stage) stay here, since their usage artifact is
-    # uploaded by the launch job, and the dispatcher's launch job and its sweep stay.
     if: >-
-      (vars.FACTORY_LAUNCH_WEBHOOK != 'on' && (
       (github.event_name == 'issue_comment' && !github.event.issue.pull_request && github.event.comment.user.type != 'Bot' &&
        (contains(fromJSON('["OWNER","MEMBER","COLLABORATOR","CONTRIBUTOR"]'), github.event.comment.author_association) || contains(fromJSON('[318831919]'), github.event.comment.user.id)) &&
        !startsWith(github.event.comment.body, '<!-- factory:') && contains(join(github.event.issue.labels.*.name, ','), 'factory:objective')) ||
       (github.event_name == 'check_suite' && startsWith(github.event.check_suite.head_branch, 'factory/')) ||
       (github.event_name == 'workflow_run' && startsWith(github.event.workflow_run.head_branch, 'factory/') && github.event.workflow_run.head_repository.full_name == github.repository) ||
       (github.event_name == 'pull_request' && startsWith(github.head_ref, 'factory/') && github.event.pull_request.head.repo.full_name == github.repository &&
-       ((github.event.action == 'labeled' && github.event.label.name == 'factory:review') || github.event.action == 'ready_for_review')))) ||
+       ((github.event.action == 'labeled' && github.event.label.name == 'factory:review') || github.event.action == 'ready_for_review')) ||
       (github.event_name == 'repository_dispatch' && github.event.action == 'factory-stage')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read }
     outputs: { start: "${{ steps.f.outputs.start }}", tick: "${{ steps.f.outputs.tick }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -169,7 +165,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: f
         with:
           mode: launch
@@ -221,7 +217,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false } # the image's clone gets the whole history, from a bundle
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         with:
           mode: image
           app_id: ${{ secrets.FACTORY_APP_ID }}
@@ -244,7 +240,7 @@ jobs:
     permissions: { contents: read } # every write is the App's
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.126
+      - uses: clockgrove/factory@v0.7.133
         id: f
         with:
           mode: sweep
