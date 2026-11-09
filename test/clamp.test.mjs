@@ -10,3 +10,16 @@ test("clamp limits a number below or above the range", () => {
   assert.equal(clamp(-3, 1, 10), 1);
   assert.equal(clamp(42, 1, 10), 10);
 });
+
+test("clamp includes both endpoints", () => {
+  assert.equal(clamp(1, 1, 10), 1);
+  assert.equal(clamp(10, 1, 10), 10);
+});
+
+test("clamp accepts equal bounds", () => {
+  assert.equal(clamp(5, 3, 3), 3);
+});
+
+test("clamp throws RangeError for reversed bounds", () => {
+  assert.throws(() => clamp(5, 10, 1), RangeError);
+});
