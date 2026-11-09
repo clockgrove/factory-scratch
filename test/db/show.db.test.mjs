@@ -24,3 +24,15 @@ test("a missing id rejects with NOT_FOUND", async () => {
     message: "no note #2147483647",
   });
 });
+
+test("an id above the serial range rejects with NOT_FOUND", async () => {
+  await assert.rejects(run(db.client, ["2147483648"]), {
+    code: "NOT_FOUND",
+    message: "no note #2147483648",
+  });
+});
+
+test("a leading-zero id with extra arguments shows the note", async () => {
+  const n = await add(db.client, { title: "Padded" });
+  assert.equal(await run(db.client, ["--foo", `0${n.id}`, "extra"]), `#${n.id} Padded\ntags: none`);
+});
