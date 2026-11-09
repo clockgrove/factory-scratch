@@ -39,6 +39,7 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `trailed(name)` (`src/trailed.mjs`): returns `greet(name)` with its final period replaced by an ellipsis, e.g. `Hello, Ada...` for `Ada`, or `Hello...` when the name is empty or missing.
 - `doubled(name)` (`src/doubled.mjs`): returns `greet(name)` with its final period replaced by two exclamation marks, e.g. `Hello, Ada!!` for `Ada`, or `Hello!!` when the name is empty or missing.
 - `spaced(name)` (`src/spaced.mjs`): returns `greet(name)` with one space between every two characters (Unicode code points), e.g. `H e l l o ,   A d a .` for `Ada`, or `H e l l o .` when the name is empty or missing.
+- `hushed(name)` (`src/hushed.mjs`): returns `greet(name)` in lower case with its final period replaced by three periods, e.g. `hello, ada...` for `Ada`, or `hello...` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
 
