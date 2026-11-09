@@ -34,6 +34,7 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `bracket110701391(name)` (`src/bracket110701391.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
 - `shouted(name)` (`src/shouted.mjs`): returns `greet(name)` in upper case, e.g. `HELLO, ADA.` for `Ada`, or `HELLO.` when the name is empty or missing.
 - `whispered(name)` (`src/whispered.mjs`): returns `greet(name)` in lower case, e.g. `hello, ada.` for `Ada`, or `hello.` when the name is empty or missing.
+- `excited(name)` (`src/excited.mjs`): returns `greet(name)` with its final period replaced by an exclamation mark, e.g. `Hello, Ada!` for `Ada`, or `Hello!` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
 
