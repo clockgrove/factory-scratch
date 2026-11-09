@@ -13,3 +13,7 @@ test("m110907181 rejects --limit abc with BAD_ARGS", async () => {
 test("m110907181 rejects --limit 2.5 with BAD_ARGS", async () => {
   await assert.rejects(run(null, ["--limit", "2.5"]), { code: "BAD_ARGS" });
 });
+
+test("m110907181 rejects --limit -1 with BAD_ARGS", async () => {
+  await assert.rejects(run(null, ["--limit", "-1"]), { code: "BAD_ARGS" });
+});
