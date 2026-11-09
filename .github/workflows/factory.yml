@@ -129,7 +129,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read }
-    outputs: { start: "${{ steps.f.outputs.start }}", issue: "${{ steps.f.outputs.issue }}" }
+    outputs: { start: "${{ steps.f.outputs.start }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
       - uses: clockgrove/factory@d876294355c65f5898736973fa4a196ecb89f61a
         id: f
