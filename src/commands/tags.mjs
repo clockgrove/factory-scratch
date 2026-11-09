@@ -12,9 +12,9 @@ export async function run(client, args) {
     if (err.code === "ERR_PARSE_ARGS_INVALID_OPTION_VALUE") throw Object.assign(new Error("tags needs --min as a positive integer"), { code: "BAD_MIN" });
     throw err;
   }
-  const min = Number(values.min);
-  if (!/^\d+$/.test(values.min) || min < 1 || min > 2147483647) {
+  // Any positive integer is valid, however large; it goes to SQL as a string so no precision is lost.
+  if (!/^\d+$/.test(values.min) || /^0+$/.test(values.min)) {
     throw Object.assign(new Error("tags needs --min as a positive integer"), { code: "BAD_MIN" });
   }
-  return (await tagCounts(client, { min })).map((r) => `${r.tag}\t${r.count}`).join("\n");
+  return (await tagCounts(client, { min: values.min })).map((r) => `${r.tag}\t${r.count}`).join("\n");
 }

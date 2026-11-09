@@ -33,3 +33,10 @@ test("every note counts, not only the first hundred", async () => {
   for (let i = 0; i < 101; i++) await add(db.client, { title: `n${i}`, tags: ["many"] });
   assert.equal(await run(db.client, []), "many\t101");
 });
+
+test("--min above every count, however large, prints nothing", async () => {
+  await seed();
+  assert.equal(await run(db.client, ["--min", "3000000000"]), "");
+  assert.equal(await run(db.client, ["--min", "99999999999999999999999"]), "");
+  assert.equal(await run(db.client, ["--min", "03"]), "b\t3");
+});

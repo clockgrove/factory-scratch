@@ -42,6 +42,6 @@ export async function similarByTag(client, tag, embedding, k = 3) {
 
 /** Every distinct tag carried by at least `min` notes with its note count, most used first, ties by tag in byte order. */
 export async function tagCounts(client, { min = 1 } = {}) {
-  const r = await client.query(`SELECT tag, COUNT(*)::int AS count FROM (SELECT DISTINCT id, unnest(tags) AS tag FROM notes) t GROUP BY tag HAVING COUNT(*) >= $1 ORDER BY count DESC, tag COLLATE "C"`, [min]);
+  const r = await client.query(`SELECT tag, COUNT(*)::int AS count FROM (SELECT DISTINCT id, unnest(tags) AS tag FROM notes) t GROUP BY tag HAVING COUNT(*) >= $1::numeric ORDER BY count DESC, tag COLLATE "C"`, [min]);
   return r.rows;
 }
