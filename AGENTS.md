@@ -12,6 +12,7 @@ Add capability by adding a file; never edit the discovery modules or another fea
 
 - A command is `src/commands/<name>.mjs` exporting `run(client, args)`; it is reached as `notes <name>` and parses `args` with `node:util` `parseArgs`. Errors carry a `code`.
 - An export format is `src/export/<name>.mjs` exporting `format(rows)`; `notes list --format <name>` picks it by file name.
+  Every export format is also registered in the shared registry, `formats.json` in clockgrove/factory-scratch-second (name, MIME type, extension), in the same change: an Objective that adds a format changes both repositories.
 - A rule is `src/rules/<name>.mjs` exporting `code` and `check(note)`, which returns a problem string or null; every rule runs on `notes add`.
 - A schema change is a new file `migrations/<YYYYMMDDHHMM>_<name>.sql`, applied in lexical order once; never edit an existing migration.
 - The store functions live in `src/notes.mjs`; add a function there only when no command can do the work with the existing ones.
