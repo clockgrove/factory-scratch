@@ -25,6 +25,10 @@ test("markdown turns each line break in the title into one space", () => {
   assert.equal(format([{ id: 2, title: "one\ntwo\r\nthree\rfour", body: "", tags: [] }]), `${HEAD}\n| 2 | one two three four |  |`);
 });
 
+test("markdown turns each line break in a tag into one space", () => {
+  assert.equal(format([{ id: 5, title: "t", body: "", tags: ["a\nb", "c"] }]), `${HEAD}\n| 5 | t | a b, c |`);
+});
+
 test("markdown writes an empty tags cell for a note with no tags", () => {
   assert.equal(format([{ id: 3, title: "t", body: "b", tags: [] }]), `${HEAD}\n| 3 | t |  |`);
 });

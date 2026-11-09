@@ -7,14 +7,14 @@ function cell(value) {
   return String(value ?? "").replaceAll("|", "\\|");
 }
 
-/** Replace each line break (CRLF, CR or LF) of a title with one space. */
+/** Replace each line break (CRLF, CR or LF) of a title or tag with one space. */
 function singleLine(value) {
   return String(value ?? "").replace(/\r\n|\r|\n/g, " ");
 }
 
 /** Render one note as a table row. */
 function row(r) {
-  const tags = (r.tags || []).map(cell).join(", ");
+  const tags = (r.tags || []).map((t) => cell(singleLine(t))).join(", ");
   return `| ${String(r.id)} | ${cell(singleLine(r.title))} | ${tags} |`;
 }
 
