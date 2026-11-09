@@ -1,4 +1,4 @@
-# Proof for clockgrove/factory#2579: a harmless comment that changes this workflow file on main mid-run.
+# Drill fixture (wave-5 re-check of clockgrove/factory#2597): this branch drops merge_group, so the queue commit starts no check run.
 # The repository's own CI: runs on every PR and on the merge queue's commit, so a
 # required check named `quality` gates merges to main. The setup script is the same one
 # Factory runs before the worker: it is deliberately heavy (PostgreSQL with pgvector built
@@ -6,7 +6,6 @@
 name: Quality
 on:
   pull_request:
-  merge_group:
   push:
     branches: [main]
 permissions:
