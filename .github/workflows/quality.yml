@@ -1,28 +1,12 @@
-# Proof for clockgrove/factory#2579: a harmless comment that changes this workflow file on main mid-run.
-# The repository's own CI: runs on every PR and on the merge queue's commit, so a
-# required check named `quality` gates merges to main. The setup script is the same one
-# Factory runs before the worker: it is deliberately heavy (PostgreSQL with pgvector built
-# from source), so the runner path carries real setup minutes.
+# Throwaway proof for clockgrove/factory#2597: no merge_group trigger, so the merge queue commit starts no check run.
 name: Quality
 on:
   pull_request:
-  merge_group:
-  push:
-    branches: [main]
 permissions:
   contents: read
 jobs:
   quality:
     name: quality
-    runs-on: ubuntu-24.04 # ubuntu-latest moved to 26.04, where setup.sh's PostgreSQL packages conflict
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: npm
-      - run: scripts/ci/setup.sh
-      - run: npm ci
-      - run: npm run check
-      - run: npm test
-      - run: npm run test:db
+      - run: echo ok
