@@ -1,3 +1,4 @@
+# Proof for clockgrove/factory#2579: a harmless comment that changes this workflow file on main mid-run.
 # The repository's own CI: runs on every PR and on the merge queue's commit, so a
 # required check named `quality` gates merges to main. The setup script is the same one
 # Factory runs before the worker: it is deliberately heavy (PostgreSQL with pgvector built
