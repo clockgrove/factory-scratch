@@ -16,13 +16,6 @@ jobs:
     name: quality
     runs-on: ubuntu-24.04 # ubuntu-latest moved to 26.04, where setup.sh's PostgreSQL packages conflict
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: "22"
-          cache: npm
-      - run: scripts/ci/setup.sh
-      - run: npm ci
-      - run: npm run check
-      - run: npm test
-      - run: npm run test:db
+      # Proof for clockgrove/factory#2597 (this branch never merges): green on the PR, red on every merge_group commit,
+      # so the merge queue drops the PR each time it is enqueued.
+      - run: test "${{ github.event_name }}" != merge_group

@@ -19,7 +19,7 @@ on:
   issues: # a new Objective dispatches at once (labelled at creation, or labelled later); the cron is only the sweep
     types: [opened, labeled, closed] # closed: the sandbox sweep destroys the Objective's sandbox
   pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready, or a Factory PR merged (siblings may be stale now)
-    types: [labeled, ready_for_review, closed]
+    types: [labeled, ready_for_review, closed, dequeued]
   push: # a merge to the default branch refreshes the sandbox image (the image job)
     branches:
       - "main"
@@ -44,7 +44,7 @@ env:
   FACTORY_MAX_USD: 20
   FACTORY_TIMEOUT_MINUTES: 90 # under 360 on hosted runners; mirrored in timeout-minutes below
   FACTORY_AUTO_MERGE: "true"
-  FACTORY_NOTIFY: kirkmarple-clockgrove#318831919 # login#id: the id pins the account (setup writes it)
+  FACTORY_NOTIFY: "" # login#id: the id pins the account (setup writes it)
   FACTORY_SETUP: scripts/ci/setup.sh
   FACTORY_INSTALL: auto # auto (from the lockfile), none, or your own command
   FACTORY_VALIDATION: npm run check, npm test, npm run test:db
@@ -70,12 +70,13 @@ jobs:
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.action == 'factory-tick') ||
       (github.event_name == 'issues' && (github.event.label.name == 'factory:objective' || (github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'factory:objective')))) ||
-      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/'))
+      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/')) ||
+      (github.event_name == 'pull_request' && github.event.action == 'dequeued' && startsWith(github.head_ref, 'factory/') && github.event.pull_request.head.repo.full_name == github.repository)
     concurrency: { group: factory-dispatch, cancel-in-progress: false } # ticks run one at a time
     runs-on: ubuntu-latest
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch:
@@ -89,7 +90,7 @@ jobs:
     permissions: { contents: read, actions: read } # the job token reads usage artifacts and this run; every write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         id: f
         with:
           mode: launch
@@ -131,7 +132,7 @@ jobs:
     permissions: { contents: read }
     outputs: { start: "${{ steps.f.outputs.start }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -145,7 +146,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         id: f
         with:
           mode: launch
@@ -184,7 +185,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false } # the image's clone gets the whole history, from a bundle
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         with:
           mode: image
           app_id: ${{ secrets.FACTORY_APP_ID }}
@@ -207,7 +208,7 @@ jobs:
     permissions: { contents: read } # every write is the App's
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@5a1ec6f0dd5fefc7773d5a9b324d481b337d9de2
         id: f
         with:
           mode: sweep
