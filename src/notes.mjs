@@ -57,3 +57,11 @@ export async function search(client, { q, tag = null, limit = 20 }) {
   const r = await client.query("SELECT id, title FROM notes WHERE (strpos(lower(title), lower($1)) > 0 OR strpos(lower(body), lower($1)) > 0) AND ($2::text IS NULL OR $2 = ANY(tags)) ORDER BY created_at DESC, id DESC LIMIT $3", [q, tag, limit]);
   return r.rows;
 }
+
+/** Notes created at or after midnight UTC on `date`, oldest first, capped by `limit`. */
+export async function since(client, { date, limit = 20 }) {
+  // ISO year zero is PostgreSQL's 1 BC, since PostgreSQL has no year zero.
+  const cutoff = date.startsWith("0000-") ? `0001${date.slice(4)}T00:00:00.000Z BC` : `${date}T00:00:00.000Z`;
+  const r = await client.query("SELECT * FROM notes WHERE created_at >= $1::timestamptz ORDER BY created_at ASC, id ASC LIMIT $2", [cutoff, limit]);
+  return r.rows;
+}
