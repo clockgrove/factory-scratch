@@ -18,8 +18,8 @@ on:
       sweep: { description: "true runs the sandbox sweep now", required: false }
   issues: # a new Objective dispatches at once (labelled at creation, or labelled later); the cron is only the sweep
     types: [opened, labeled, closed] # closed: the sandbox sweep destroys the Objective's sandbox
-  pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready, or a Factory PR merged (siblings may be stale now)
-    types: [labeled, ready_for_review, closed]
+  pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready, a Factory PR merged (siblings may be stale now), or the merge queue dropped one (the dispatcher re-enqueues it once, then Blocks)
+    types: [labeled, ready_for_review, closed, dequeued]
   push: # a merge to the default branch refreshes the sandbox image (the image job)
     branches:
       - "main"
@@ -27,7 +27,7 @@ on:
     types: [factory-tick, factory-stage]
   issue_comment: # a maintainer's comment on an Objective: the answer to its Question
     types: [created]
-  check_suite: # CI from a GitHub App outside Actions finished on a factory/ branch: the stage waiting on it resumes
+  check_suite: # CI from a GitHub App outside Actions finished on a factory/ branch: a stage waiting on it resumes, or the dispatcher's merge pass runs
     types: [completed]
   workflow_run: # CI on Actions finished (GitHub sends no check_suite event for a suite Actions made)
     workflows:
@@ -65,19 +65,43 @@ permissions: # the job token reads code and Actions; every write goes through th
   # id-token: write         # Claude workload identity federation only
 jobs:
   dispatch:
-    # Ticks: the cron, a manual run, a new Objective's label, or the review job's last step (a worker slot freed).
+    # Ticks: the cron, a manual run, a new Objective's label, the review job's last step (a worker slot freed), a merged
+    # Factory PR, the merge queue dropping one (only GitHub and people with write access dequeue), the queue watch, and,
+    # without a sandbox, CI finishing on a factory/ branch (the merge pass merges a PR whose checks just went green; with
+    # a sandbox the gate job takes those events and ticks this job itself).
     if: >-
       github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'repository_dispatch' && github.event.action == 'factory-tick') ||
       (github.event_name == 'issues' && (github.event.label.name == 'factory:objective' || (github.event.action == 'opened' && contains(join(github.event.issue.labels.*.name, ','), 'factory:objective')))) ||
-      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/'))
+      (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/')) ||
+      (github.event_name == 'pull_request' && github.event.action == 'dequeued' && startsWith(github.head_ref, 'factory/') && github.event.pull_request.head.repo.full_name == github.repository)
     concurrency: { group: factory-dispatch, cancel-in-progress: false } # ticks run one at a time
     runs-on: ubuntu-latest
-    outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}" }
+    outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}", queue_watch: "${{ steps.f.outputs.queue_watch }}" }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
+  queue-watch:
+    # A PR the merge pass left in the merge queue with no check run on its queue commit yet: this job reads that commit
+    # every 30 s and exits once a check starts, which is within a minute on a healthy queue. A commit that starts none
+    # in 10 minutes ticks the dispatcher, whose merge pass takes the PR out and puts it back once, then Blocks, rather
+    # than waiting out the ruleset's check timeout or GitHub's cron. One watch runs at a time; a newer one waits.
+    name: queue watch
+    needs: dispatch
+    if: needs.dispatch.outputs.queue_watch != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: { contents: read, actions: write } # actions: write only for the dispatcher tick
+    concurrency: { group: factory-queue-watch, cancel-in-progress: false }
+    steps:
+      - uses: clockgrove/factory@v0.7.121
+        id: w
+        with: { mode: watch, pr: "${{ needs.dispatch.outputs.queue_watch }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
+      - name: Dispatch tick (a queue commit started no check run)
+        if: steps.w.outputs.tick == 'true'
+        env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" } # no checkout here: gh names the repository from GH_REPO
+        run: gh workflow run factory.yml
   launch:
     # The dispatcher's picks and its sweep's re-launches: each one's stage starts in its sandbox; this job starts it and exits.
     name: launch (${{ matrix.issue }})
@@ -89,7 +113,7 @@ jobs:
     permissions: { contents: read, actions: read } # the job token reads usage artifacts and this run; every write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         id: f
         with:
           mode: launch
@@ -129,9 +153,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: { contents: read }
-    outputs: { start: "${{ steps.f.outputs.start }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
+    outputs: { start: "${{ steps.f.outputs.start }}", tick: "${{ steps.f.outputs.tick }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -145,7 +169,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         id: f
         with:
           mode: launch
@@ -163,9 +187,22 @@ jobs:
         if: always() && steps.f.outputs.usage_dir != ''
         with: { name: "${{ steps.f.outputs.usage_name }}", path: "${{ steps.f.outputs.usage_dir }}", retention-days: 90, overwrite: true } # the ended stage's usage, as the work and review jobs upload theirs
       - name: Dispatch tick (an answered Question is Queued, or a stage ended and its sandbox stopped)
-        if: steps.f.outputs.exit == 'queued' || steps.f.outputs.exit == 'stopped'
-        env: { GH_TOKEN: "${{ github.token }}" }
+        if: steps.f.outputs.exit == 'queued' || steps.f.outputs.exit == 'stopped' || steps.f.outputs.exit == 'tick'
+        env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" } # no checkout here: gh names the repository from GH_REPO
         run: gh workflow run factory.yml || true
+  launch-tick:
+    # CI finished on an In-review Objective's PR head with no stage waiting on it (the gate's answer): the dispatcher's
+    # merge pass runs now, not on GitHub's cron. In no Objective group: it starts nothing there, so it replaces no launch.
+    name: merge tick (${{ needs.launch-gate.outputs.issue }})
+    needs: launch-gate
+    if: needs.launch-gate.outputs.tick == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: { actions: write } # the dispatcher tick only
+    steps:
+      - name: Dispatch tick (the merge pass)
+        env: { GH_TOKEN: "${{ github.token }}", GH_REPO: "${{ github.repository }}" }
+        run: gh workflow run factory.yml
   image:
     # The sandbox image every stage starts from: FACTORY_SETUP run in a fresh sandbox beside a clone of the default
     # branch's head, the dependency store and the harness CLIs, kept as a snapshot and recorded by the Factory App on
@@ -184,7 +221,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false } # the image's clone gets the whole history, from a bundle
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         with:
           mode: image
           app_id: ${{ secrets.FACTORY_APP_ID }}
@@ -207,7 +244,7 @@ jobs:
     permissions: { contents: read } # every write is the App's
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.7.106
+      - uses: clockgrove/factory@v0.7.121
         id: f
         with:
           mode: sweep
