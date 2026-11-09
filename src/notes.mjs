@@ -26,6 +26,12 @@ export async function remove(client, id) {
   return r.rowCount === 1;
 }
 
+/** The note with this id, or null when there is none. */
+export async function get(client, id) {
+  const r = await client.query("SELECT * FROM notes WHERE id = $1", [id]);
+  return r.rows[0] ?? null;
+}
+
 /** The `k` notes nearest to `embedding` by Euclidean distance, nearest first, with their distance. */
 export async function similar(client, embedding, k = 3) {
   const vec = `[${embedding.map(Number).join(",")}]`;
