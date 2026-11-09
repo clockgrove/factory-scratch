@@ -51,3 +51,9 @@ export async function tagCounts(client, { min = 1 } = {}) {
   const r = await client.query(`SELECT tag, COUNT(*)::int AS count FROM (SELECT DISTINCT id, unnest(tags) AS tag FROM notes) t GROUP BY tag HAVING COUNT(*) >= $1::numeric ORDER BY count DESC, tag COLLATE "C"`, [min]);
   return r.rows;
 }
+
+/** Notes containing literal text in title or body after Postgres lower-casing, optionally tagged, newest first. */
+export async function search(client, { q, tag = null, limit = 20 }) {
+  const r = await client.query("SELECT id, title FROM notes WHERE (strpos(lower(title), lower($1)) > 0 OR strpos(lower(body), lower($1)) > 0) AND ($2::text IS NULL OR $2 = ANY(tags)) ORDER BY created_at DESC, id DESC LIMIT $3", [q, tag, limit]);
+  return r.rows;
+}
