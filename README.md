@@ -28,11 +28,11 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `twice110622580(name)` (`src/twice110622580.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 - `twice110701080(name)` (`src/twice110701080.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 - `bracket110701081(name)` (`src/bracket110701081.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
-- `shouted(name)` (`src/shouted.mjs`): returns `greet(name)` in upper case, e.g. `HELLO, ADA.` for `Ada`, or `HELLO.` when the name is empty or missing.
 - `twice110701190(name)` (`src/twice110701190.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 - `bracket110701191(name)` (`src/bracket110701191.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
 - `twice110701390(name)` (`src/twice110701390.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 - `bracket110701391(name)` (`src/bracket110701391.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
+- `shouted(name)` (`src/shouted.mjs`): returns `greet(name)` in upper case, e.g. `HELLO, ADA.` for `Ada`, or `HELLO.` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
 
