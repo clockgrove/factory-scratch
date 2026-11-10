@@ -4,15 +4,19 @@
 # purpose: it is the setup cost a sandbox image would remove.
 set -euo pipefail
 PGVECTOR_VERSION="${PGVECTOR_VERSION:-v0.8.1}"
+# Every network or service call is bounded: a stalled mirror, dpkg lock or clone fails the step in minutes instead of
+# holding a CI job (and the merge queue behind it) for an hour.
+APT_OPTS=(-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 -o DPkg::Lock::Timeout=120)
+apt_get() { timeout -k 10 300 sudo apt-get "${APT_OPTS[@]}" "$@"; }
 if command -v pg_config >/dev/null 2>&1; then
-  sudo apt-get update -qq
-  sudo apt-get install -y -qq "postgresql-server-dev-$(pg_config --version | sed -E 's/PostgreSQL ([0-9]+).*/\1/')" build-essential git >/dev/null
+  apt_get update -qq
+  apt_get install -y -qq "postgresql-server-dev-$(pg_config --version | sed -E 's/PostgreSQL ([0-9]+).*/\1/')" build-essential git >/dev/null
 else
-  sudo apt-get update -qq && sudo apt-get install -y -qq postgresql postgresql-server-dev-all build-essential git >/dev/null
+  apt_get update -qq && apt_get install -y -qq postgresql postgresql-server-dev-all build-essential git >/dev/null
 fi
-sudo systemctl start postgresql || sudo service postgresql start
+timeout -k 10 120 sudo systemctl start postgresql || timeout -k 10 120 sudo service postgresql start
 tmp="$(mktemp -d)"
-git clone -q --depth 1 --branch "$PGVECTOR_VERSION" https://github.com/pgvector/pgvector.git "$tmp/pgvector"
+timeout -k 10 180 git clone -q --depth 1 --branch "$PGVECTOR_VERSION" https://github.com/pgvector/pgvector.git "$tmp/pgvector"
 make -s -C "$tmp/pgvector" with_llvm=no >/dev/null
 sudo make -s -C "$tmp/pgvector" install with_llvm=no >/dev/null
 sudo -u postgres psql -v ON_ERROR_STOP=1 -q <<'SQL'
