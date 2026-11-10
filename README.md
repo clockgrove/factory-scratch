@@ -42,6 +42,7 @@ Scratch adopter for Factory 0.6. Nothing here matters; it exists so Factory's wo
 - `hushed(name)` (`src/hushed.mjs`): returns `greet(name)` in lower case with its final period replaced by three periods, e.g. `hello, ada...` for `Ada`, or `hello...` when the name is empty or missing.
 - `twice110923400(name)` (`src/twice110923400.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 - `bracket110923401(name)` (`src/bracket110923401.mjs`): returns `greet(name)` wrapped in square brackets with no space inside, e.g. `[Hello, Ada.]` for `Ada`, or `[Hello.]` when the name is empty or missing.
+- `twice111002480(name)` (`src/twice111002480.mjs`): returns `greet(name)` repeated twice, joined by exactly one space, e.g. `Hello, Ada. Hello, Ada.` for `Ada`, or `Hello. Hello.` when the name is empty or missing.
 
 Scratch note: used to make a Factory PR fall behind main for the no-queue fallback test.
 
