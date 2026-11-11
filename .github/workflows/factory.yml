@@ -39,7 +39,7 @@ env:
   FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
   FACTORY_REVIEWER_MODEL: claude-fable-5-2
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
-  FACTORY_MAX_CONCURRENT: 12
+  FACTORY_MAX_CONCURRENT: 5
   FACTORY_DAILY_USD: 50
   FACTORY_MAX_USD: 20
   FACTORY_TIMEOUT_MINUTES: 90 # under 360 on hosted runners; mirrored in timeout-minutes below
