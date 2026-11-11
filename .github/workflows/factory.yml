@@ -89,7 +89,7 @@ jobs:
       wake_kind: "${{ steps.f.outputs.wake_kind }}"
       image_owed: "${{ steps.f.outputs.image_owed }}" # an image build an earlier day left owed: the image job runs it
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   queue-watch:
@@ -109,7 +109,7 @@ jobs:
     permissions: { contents: read, actions: write } # actions: write only for the dispatcher tick
     concurrency: { group: factory-queue-watch, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: w
         with: { mode: watch, pr: "${{ needs.dispatch.outputs.queue_watch }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
       - name: Dispatch tick (a watched PR left the queue or stalled there, or the watch's time is up)
@@ -155,7 +155,7 @@ jobs:
     permissions: { contents: read, actions: write } # the job token reads usage artifacts and this run, and ticks the dispatcher; every other write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with:
           mode: launch
@@ -199,7 +199,7 @@ jobs:
     permissions: { contents: read }
     outputs: { start: "${{ steps.f.outputs.start }}", tick: "${{ steps.f.outputs.tick }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -213,7 +213,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with:
           mode: launch
@@ -275,7 +275,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false, ref: "${{ needs.dispatch.outputs.image_owed == 'true' && github.event.repository.default_branch || '' }}" } # the image's clone gets the whole history, from a bundle; an owed build, the default branch whatever the event
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with:
           mode: image
@@ -307,7 +307,7 @@ jobs:
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     outputs: { wake_at: "${{ steps.f.outputs.wake_at }}", wake_kind: "${{ steps.f.outputs.wake_kind }}" }
     steps:
-      - uses: clockgrove/factory@139de301465ecd13519d909dc89b92f6843d3635
+      - uses: clockgrove/factory@a9e91974b565da1d22abb46bd8bc21ad357fdef1
         id: f
         with:
           mode: sweep
@@ -347,7 +347,9 @@ jobs:
     # starting from it. Sleeps and ticks as sweep-wake does.
     name: wake (${{ needs.image.outputs.wake_kind }} ${{ needs.image.outputs.wake_at }})
     needs: image
-    if: needs.image.outputs.wake_at != ''
+    # The image job runs past a skipped dispatcher (push, cron, a manual build); without a status function GitHub's implicit
+    # success() would be false for any job downstream of that skip, so this one states its own condition.
+    if: needs.image.result == 'success' && needs.image.outputs.wake_at != '' && !cancelled()
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions: { actions: write } # the tick only
