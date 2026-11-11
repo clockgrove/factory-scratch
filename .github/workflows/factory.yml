@@ -79,7 +79,7 @@ jobs:
     timeout-minutes: 15 # a tick takes seconds; a hung one would hold every later tick for the runner's six hours
     outputs: { issues: "${{ steps.f.outputs.issues }}", count: "${{ steps.f.outputs.count }}", queue_watch: "${{ steps.f.outputs.queue_watch }}" }
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   queue-watch:
@@ -99,7 +99,7 @@ jobs:
     permissions: { contents: read, actions: write } # actions: write only for the dispatcher tick
     concurrency: { group: factory-queue-watch, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: w
         with: { mode: watch, pr: "${{ needs.dispatch.outputs.queue_watch }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
       - name: Dispatch tick (a watched PR left the queue or stalled there, or the watch's time is up)
@@ -117,7 +117,7 @@ jobs:
     permissions: { contents: read, actions: read } # the job token reads usage artifacts and this run; every write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: f
         with:
           mode: launch
@@ -155,7 +155,7 @@ jobs:
     permissions: { contents: read }
     outputs: { start: "${{ steps.f.outputs.start }}", tick: "${{ steps.f.outputs.tick }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -169,7 +169,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: f
         with:
           mode: launch
@@ -221,7 +221,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false } # the image's clone gets the whole history, from a bundle
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         with:
           mode: image
           app_id: ${{ secrets.FACTORY_APP_ID }}
@@ -244,7 +244,7 @@ jobs:
     permissions: { contents: read } # every write is the App's
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.9.2
+      - uses: clockgrove/factory@v0.9.3
         id: f
         with:
           mode: sweep
