@@ -36,10 +36,10 @@ on:
       - Quality
     types: [completed]
 env:
-  FACTORY_HARNESS: codex # claude | codex | copilot
-  FACTORY_MODEL: gpt-6.1-sol
-  FACTORY_SUBAGENT_MODEL: gpt-6.1-sol
-  FACTORY_REVIEWER_MODEL: gpt-6.1-sol
+  FACTORY_HARNESS: copilot # claude | codex | copilot
+  FACTORY_MODEL: ""
+  FACTORY_SUBAGENT_MODEL: ""
+  FACTORY_REVIEWER_MODEL: ""
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
   FACTORY_MAX_CONCURRENT: 5
   FACTORY_DAILY_USD: 50
@@ -54,13 +54,13 @@ env:
   FACTORY_PROTECTED_PATHS: /scripts/ci/setup.sh
   FACTORY_CI_CHECKS: quality
   FACTORY_NODE_VERSION: 22 # the Node.js your CI uses
-  FACTORY_WORKER_SECRETS: AI_GATEWAY_API_KEY=WORKER_AI_GATEWAY_API_KEY # gate #97: relayed, metered against max_usd
   FACTORY_SANDBOX: vercel # each stage runs in the Objective's cloud sandbox, started by a launch job; re-run setup to change
   FACTORY_SANDBOX_VCPUS: 2 # the sandbox's size (2 GB of memory per vCPU on Vercel); set it from your own capacity test
   FACTORY_IMAGE_REFRESH: merge # merge: rebuild the sandbox image on each merge until the minutes below, then on the next UTC day's first tick; nightly: once a day
   FACTORY_IMAGE_DAILY_MINUTES: 5 # image build minutes a day on merges
   FACTORY_SANDBOX_IDLE_DAYS: 7 # the sweep destroys a sandbox stopped this long, its Objective neither Running nor In review
   FACTORY_SWEEP_MAX_DESTROYS: 5 # sandboxes one sweep run destroys at most
+  FACTORY_WORKER_SECRETS: AI_GATEWAY_API_KEY=WORKER_AI_GATEWAY_API_KEY # gate #97: relayed, metered against max_usd
 permissions: # the job token reads code and Actions; every write goes through the App's token
   contents: read
   actions: read # the dispatcher sums today's usage artifacts; doctor lists the CI workflow's triggers
