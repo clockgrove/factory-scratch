@@ -19,7 +19,7 @@ on:
       image: { description: "true builds the sandbox image from the default branch now", required: false }
       sweep: { description: "true runs the sandbox sweep now", required: false }
   issues: # a new Objective dispatches at once (labelled at creation, or labelled later); closed: an Objective blocked by that issue is ready now
-    types: [opened, labeled, closed] # closed also runs the sandbox sweep, which destroys a closed Objective's sandbox; so does the factory:blocked label, which stops one left running
+    types: [opened, labeled, closed] # closed also runs the sandbox sweep, which destroys a closed Objective's sandbox; so do the factory:blocked and factory:question labels, which stop one left running
   pull_request: # fires because the App (not the job token) applies factory:review, a human marks a Question draft ready (the App's own ready mark starts no job), a Factory PR merged (siblings may be stale now), or the merge queue dropped one (the dispatcher re-enqueues it once, then Blocks)
     types: [labeled, ready_for_review, closed, dequeued]
   push: # a merge to the default branch refreshes the sandbox image (the image job)
@@ -36,14 +36,14 @@ on:
       - Quality
     types: [completed]
 env:
-  FACTORY_HARNESS: claude # claude | codex | copilot
-  FACTORY_MODEL: claude-opus-5-5
-  FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
-  FACTORY_REVIEWER_MODEL: claude-fable-5-2
+  FACTORY_HARNESS: codex # claude | codex | copilot
+  FACTORY_MODEL: gpt-6.1-sol
+  FACTORY_SUBAGENT_MODEL: gpt-6.1-sol
+  FACTORY_REVIEWER_MODEL: gpt-6.1-sol
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
   FACTORY_MAX_CONCURRENT: 5
   FACTORY_DAILY_USD: 50
-  FACTORY_MAX_USD: 20
+  FACTORY_MAX_USD: 2
   FACTORY_TIMEOUT_MINUTES: 90 # under 360 on hosted runners; mirrored in timeout-minutes below
   FACTORY_AUTO_MERGE: "true"
   FACTORY_NOTIFY: kirkmarple-clockgrove#318831919 # login#id: the id pins the account (setup writes it)
@@ -89,7 +89,7 @@ jobs:
       wake_kind: "${{ steps.f.outputs.wake_kind }}"
       image_owed: "${{ steps.f.outputs.image_owed }}" # an image build an earlier day left owed: the image job runs it
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with: { mode: dispatch, issue: "${{ inputs.issue }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   queue-watch:
@@ -109,7 +109,7 @@ jobs:
     permissions: { contents: read, actions: write } # actions: write only for the dispatcher tick
     concurrency: { group: factory-queue-watch, cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: w
         with: { mode: watch, pr: "${{ needs.dispatch.outputs.queue_watch }}", app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
       - name: Dispatch tick (a watched PR left the queue or stalled there, or the watch's time is up)
@@ -155,7 +155,7 @@ jobs:
     permissions: { contents: read, actions: write } # the job token reads usage artifacts and this run, and ticks the dispatcher; every other write is the App's
     concurrency: { group: "factory-launch-factory/${{ matrix.issue }}", cancel-in-progress: false } # one launcher per Objective at a time, with launch-event's
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with:
           mode: launch
@@ -168,9 +168,11 @@ jobs:
           vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }} # the harness's credential goes into the stage's environment only
           codex_api_key: ${{ secrets.CODEX_API_KEY }}
+          codex_gateway_key: ${{ secrets.FACTORY_CODEX_GATEWAY_KEY }}
           copilot_github_token: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # credential: plan only; your own repository only
           ai_gateway_api_key: ${{ secrets.AI_GATEWAY_API_KEY }}
+          worker_secret_values: ${{ secrets.FACTORY_WORKER_SECRET_VALUES }} # with FACTORY_WORKER_SECRETS: a work stage's harness only
       - uses: actions/upload-artifact@v7
         if: always() && steps.f.outputs.usage_dir != ''
         with: { name: "${{ steps.f.outputs.usage_name }}", path: "${{ steps.f.outputs.usage_dir }}", retention-days: 90, overwrite: true } # an earlier stage's usage whose end was never answered
@@ -199,7 +201,7 @@ jobs:
     permissions: { contents: read }
     outputs: { start: "${{ steps.f.outputs.start }}", tick: "${{ steps.f.outputs.tick }}", issue: "${{ steps.f.outputs.issue_number }}" } # the Action's output is issue_number: an empty one would put every launch in one group
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with: { mode: gate, app_id: "${{ secrets.FACTORY_APP_ID }}", app_private_key: "${{ secrets.FACTORY_APP_PRIVATE_KEY }}" }
   launch-event:
@@ -213,7 +215,7 @@ jobs:
     # does with the group of a job it skips.
     concurrency: { group: "${{ needs.launch-gate.outputs.start == 'true' && format('factory-launch-factory/{0}', needs.launch-gate.outputs.issue) || format('factory-launch-none-{0}', github.run_id) }}", cancel-in-progress: false }
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with:
           mode: launch
@@ -224,9 +226,11 @@ jobs:
           vercel_project_id: ${{ secrets.VERCEL_PROJECT_ID }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }} # the harness's credential goes into the stage's environment only
           codex_api_key: ${{ secrets.CODEX_API_KEY }}
+          codex_gateway_key: ${{ secrets.FACTORY_CODEX_GATEWAY_KEY }}
           copilot_github_token: ${{ secrets.COPILOT_GITHUB_TOKEN }}
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }} # credential: plan only; your own repository only
           ai_gateway_api_key: ${{ secrets.AI_GATEWAY_API_KEY }}
+          worker_secret_values: ${{ secrets.FACTORY_WORKER_SECRET_VALUES }} # with FACTORY_WORKER_SECRETS: a work stage's harness only
       - uses: actions/upload-artifact@v7
         if: always() && steps.f.outputs.usage_dir != ''
         with: { name: "${{ steps.f.outputs.usage_name }}", path: "${{ steps.f.outputs.usage_dir }}", retention-days: 90, overwrite: true } # the ended stage's usage, as the work and review jobs upload theirs
@@ -275,7 +279,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0, persist-credentials: false, ref: "${{ needs.dispatch.outputs.image_owed == 'true' && github.event.repository.default_branch || '' }}" } # the image's clone gets the whole history, from a bundle; an owed build, the default branch whatever the event
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with:
           mode: image
@@ -288,18 +292,19 @@ jobs:
   sweep:
     # The sandbox sweep: Factory's Objective sandboxes in the vendor's project that no live Objective needs (its issue
     # closed, its record naming another sandbox, or stopped FACTORY_SANDBOX_IDLE_DAYS with the Objective neither Running
-    # nor In review) are destroyed, at most FACTORY_SWEEP_MAX_DESTROYS a run, then this repository's superseded images. A
-    # stage's usage the launcher never collected is uploaded as the launcher would. Hourly, by hand, and when an
-    # Objective closes or its PR merges, so a finished Objective's stop snapshot does not hold the vendor's storage. Its own
-    # wake (sweep-wake below) runs it again when what it left is due, minutes later: an end's or a new sandbox's grace,
-    # a superseded image, a cap's rest. A stopped sandbox's idle days ride on the next event's sweep or the hourly cron. A
-    # Block runs it too: a sandbox still running with no stage holding it is stopped and its cost booked at once. A stage
-    # that Blocks itself also says it ended, and the launcher's end answers that; this sweep leaves a stage that ended
+    # nor In review; a Question's card sits in In review, and its label makes it a Question) are destroyed, at most
+    # FACTORY_SWEEP_MAX_DESTROYS a run, then this repository's superseded images. A stage's usage the launcher never
+    # collected is uploaded as the launcher would. Hourly, by hand, and when an Objective closes or its PR merges, so a
+    # finished Objective's stop snapshot does not hold the vendor's storage. Its own wake (sweep-wake below) runs it again
+    # when what it left is due, minutes later: an end's or a new sandbox's grace, a superseded image, a cap's rest. A
+    # stopped sandbox's idle days ride on the next event's sweep or the hourly cron. A Block or a Question runs it too: a
+    # sandbox still running with no stage holding it is stopped and its cost booked at once. A stage that Blocks itself or
+    # asks a Question also says it ended, and the launcher's end answers that; this sweep leaves a stage that ended
     # moments ago to it (logic.mjs sweepDecision), and its claim under the record lock keeps the two apart.
     if: >-
       github.event.schedule == '17 * * * *' || (github.event_name == 'workflow_dispatch' && (inputs.sweep == 'true' || startsWith(inputs.wake, 'sweep '))) ||
       (github.event_name == 'issues' && github.event.action == 'closed' && contains(join(github.event.issue.labels.*.name, ','), 'factory:objective')) ||
-      (github.event_name == 'issues' && github.event.action == 'labeled' && github.event.label.name == 'factory:blocked') ||
+      (github.event_name == 'issues' && github.event.action == 'labeled' && (github.event.label.name == 'factory:blocked' || github.event.label.name == 'factory:question')) ||
       (github.event_name == 'pull_request' && github.event.action == 'closed' && github.event.pull_request.merged == true && startsWith(github.head_ref, 'factory/') && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -307,7 +312,7 @@ jobs:
     concurrency: { group: factory-sweep, cancel-in-progress: false }
     outputs: { wake_at: "${{ steps.f.outputs.wake_at }}", wake_kind: "${{ steps.f.outputs.wake_kind }}" }
     steps:
-      - uses: clockgrove/factory@v0.9.6
+      - uses: clockgrove/factory@b2318ec08a06474d360cb3183f12d970c602be99
         id: f
         with:
           mode: sweep
