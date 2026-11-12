@@ -3,7 +3,7 @@ const TIMEOUT_MS = 15000;
 /** Sends one request and returns the HTTP status code, or 'refused' when it fails before any response. */
 async function probe(url, init) {
   try {
-    const res = await fetch(url, { ...init, signal: AbortSignal.timeout(TIMEOUT_MS) });
+    const res = await fetch(url, { ...init, redirect: 'manual', signal: AbortSignal.timeout(TIMEOUT_MS) });
     await res.arrayBuffer().catch(() => {});
     return String(res.status);
   } catch {
