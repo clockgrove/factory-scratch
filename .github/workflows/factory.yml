@@ -36,10 +36,10 @@ on:
       - Quality
     types: [completed]
 env:
-  FACTORY_HARNESS: copilot # claude | codex | copilot
-  FACTORY_MODEL: ""
-  FACTORY_SUBAGENT_MODEL: ""
-  FACTORY_REVIEWER_MODEL: ""
+  FACTORY_HARNESS: claude # claude | codex | copilot
+  FACTORY_MODEL: claude-opus-5-5
+  FACTORY_SUBAGENT_MODEL: claude-sonnet-5-5
+  FACTORY_REVIEWER_MODEL: claude-fable-5-2
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
   FACTORY_MAX_CONCURRENT: 5
   FACTORY_DAILY_USD: 50
@@ -54,6 +54,7 @@ env:
   FACTORY_PROTECTED_PATHS: /scripts/ci/setup.sh
   FACTORY_CI_CHECKS: quality
   FACTORY_NODE_VERSION: 22 # the Node.js your CI uses
+  FACTORY_RESUME_POLICY: fix-passes # gate v0.9.12: the review job restores the held worker session
   FACTORY_SANDBOX: vercel # each stage runs in the Objective's cloud sandbox, started by a launch job; re-run setup to change
   FACTORY_SANDBOX_VCPUS: 2 # the sandbox's size (2 GB of memory per vCPU on Vercel); set it from your own capacity test
   FACTORY_IMAGE_REFRESH: merge # merge: rebuild the sandbox image on each merge until the minutes below, then on the next UTC day's first tick; nightly: once a day
