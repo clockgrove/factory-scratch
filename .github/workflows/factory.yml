@@ -36,10 +36,10 @@ on:
       - Quality
     types: [completed]
 env:
-  FACTORY_HARNESS: copilot # claude | codex | copilot
-  FACTORY_MODEL: ""
-  FACTORY_SUBAGENT_MODEL: ""
-  FACTORY_REVIEWER_MODEL: ""
+  FACTORY_HARNESS: codex # claude | codex | copilot
+  FACTORY_MODEL: gpt-6.1-sol
+  FACTORY_SUBAGENT_MODEL: gpt-6.1-sol
+  FACTORY_REVIEWER_MODEL: gpt-6.1-sol
   FACTORY_CREDENTIAL: plan # api; plan only for your own repository
   FACTORY_MAX_CONCURRENT: 5
   FACTORY_DAILY_USD: 50
